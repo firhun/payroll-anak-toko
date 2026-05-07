@@ -867,6 +867,96 @@
   .total-item.t-good .total-val { color: var(--good); }
   .total-item.t-accent .total-val { color: var(--accent); }
 
+  /* ROSTER PANEL */
+  .roster-panel {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px 18px;
+    margin-bottom: 20px;
+  }
+  .roster-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 13px;
+    flex-wrap: wrap;
+  }
+  .roster-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  .roster-hint {
+    font-size: 11px;
+    color: var(--ink-mute);
+  }
+  .roster-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .r-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 9px 5px 12px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--line);
+    transition: all 0.15s;
+    background: var(--glass);
+    color: var(--ink-soft);
+    user-select: none;
+  }
+  .r-chip:hover {
+    border-color: var(--accent);
+    color: var(--ink);
+    background: var(--accent-soft);
+    transform: translateY(-1px);
+  }
+  .r-chip.in-queue {
+    background: rgba(52,211,153,0.08);
+    border-color: rgba(52,211,153,0.28);
+    color: var(--good);
+    cursor: default;
+    pointer-events: none;
+    opacity: 0.75;
+  }
+  .r-chip .chip-name { font-weight: 600; }
+  .r-chip .chip-pokok {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-mute);
+    margin-left: 2px;
+  }
+  .r-chip.in-queue .chip-pokok { color: rgba(52,211,153,0.6); }
+  .r-chip .chip-del {
+    background: none;
+    border: none;
+    color: var(--ink-mute);
+    cursor: pointer;
+    padding: 0 2px;
+    font-size: 15px;
+    line-height: 1;
+    opacity: 0.45;
+    transition: opacity 0.15s, color 0.15s;
+    pointer-events: all;
+    margin-left: 2px;
+  }
+  .r-chip .chip-del:hover { opacity: 1; color: #f87171; }
+  .roster-empty {
+    font-size: 12px;
+    color: var(--ink-mute);
+    font-style: italic;
+    padding: 4px 0;
+  }
+
   /* RESPONSIVE */
   @media (max-width: 1100px) {
     .chart-grid { grid-template-columns: 1fr; }
@@ -1104,6 +1194,15 @@
             <button class="btn ghost sm" id="btn-reset-store">Reset Toko</button>
           </div>
         </div>
+        <!-- ROSTER PANEL -->
+        <div class="roster-panel" id="roster-panel">
+          <div class="roster-head">
+            <span class="roster-title">Daftar Karyawan Toko</span>
+            <span class="roster-hint">Klik nama untuk tambah ke gaji periode ini · × untuk hapus dari roster</span>
+          </div>
+          <div class="roster-chips" id="roster-chips"></div>
+        </div>
+
         <div class="emp-grid" id="emp-grid"></div>
         <div class="emp-totals-bar">
           <div class="total-item"><span class="total-lbl">Gaji Pokok</span><span class="total-val" id="t-pokok">0</span></div>
@@ -1117,9 +1216,9 @@
           <div class="total-item t-accent"><span class="total-lbl">Sisa</span><span class="total-val" id="t-remaining">Rp 0</span></div>
         </div>
         <div class="add-row-bar">
-          <input type="text" id="new-name" placeholder="Nama karyawan baru…">
+          <input type="text" id="new-name" placeholder="Nama karyawan baru ke roster…">
           <input type="number" id="new-pokok" placeholder="Gaji pokok" style="max-width:140px;">
-          <button class="btn sm" id="btn-add-emp">+ Tambah</button>
+          <button class="btn sm" id="btn-add-emp">+ Ke Roster</button>
         </div>
       </div>
     </div>
@@ -1538,6 +1637,10 @@ const HOLIDAYS = {
    ============================================================ */
 const KEY = 'payroll_toko_v9';
 
+function uid() {
+  return 'r_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+}
+
 const DEFAULT_DATA = {
   dateStart: '2025-12-21',
   dateEnd: '2025-12-31',
@@ -1547,13 +1650,13 @@ const DEFAULT_DATA = {
   view: 'dashboard',
   history: [],
   stores: [
-    { name: 'Cangkring Fashion', employees: [] },
-    { name: 'Cangkring ATK',     employees: [] },
-    { name: 'Wonodadi Fashion',  employees: [] },
-    { name: 'Wonodadi ATK',      employees: [] },
-    { name: 'Srengat',           employees: [] },
-    { name: 'Talun',             employees: [] },
-    { name: 'Kauman',            employees: [] },
+    { name: 'Cangkring Fashion', roster: [], employees: [] },
+    { name: 'Cangkring ATK',     roster: [], employees: [] },
+    { name: 'Wonodadi Fashion',  roster: [], employees: [] },
+    { name: 'Wonodadi ATK',      roster: [], employees: [] },
+    { name: 'Srengat',           roster: [], employees: [] },
+    { name: 'Talun',             roster: [], employees: [] },
+    { name: 'Kauman',            roster: [], employees: [] },
   ]
 };
 
@@ -1568,13 +1671,29 @@ function loadState() {
     }
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Migration: pastikan field 'a' (absent libur), 'paid', 'ad' (absent biasa) & 'extras' ada
-      parsed.stores?.forEach(s => s.employees?.forEach(e => {
-        if (e.a === undefined) e.a = 0;        // bolos hari libur
-        if (e.ad === undefined) e.ad = 0;      // bolos hari biasa (baru)
-        if (e.paid === undefined) e.paid = 0;
-        if (!Array.isArray(e.extras)) e.extras = []; // [{name, amount}]
-      }));
+      // Migration: roster system + field defaults
+      parsed.stores?.forEach(s => {
+        if (!Array.isArray(s.roster)) {
+          // Migrate existing employees to roster
+          if (s.employees?.length > 0) {
+            s.roster = s.employees.map(e => ({ id: uid(), n: e.n, p: e.p }));
+            s.employees.forEach(e => {
+              if (!e.rosterId) {
+                const r = s.roster.find(r => r.n === e.n);
+                if (r) e.rosterId = r.id;
+              }
+            });
+          } else {
+            s.roster = [];
+          }
+        }
+        s.employees?.forEach(e => {
+          if (e.a === undefined) e.a = 0;
+          if (e.ad === undefined) e.ad = 0;
+          if (e.paid === undefined) e.paid = 0;
+          if (!Array.isArray(e.extras)) e.extras = [];
+        });
+      });
       if (!Array.isArray(parsed.history)) parsed.history = [];
       return parsed;
     }
@@ -1738,7 +1857,7 @@ function renderSidebar() {
     btn.innerHTML = `
       <span class="dot"></span>
       <span class="name-text">${escapeHtml(s.name)}</span>
-      <span class="store-count">${s.employees.length}</span>
+      <span class="store-count">${(s.roster||s.employees).length}</span>
     `;
     btn.onclick = () => { state.activeStore = i; saveState(true); renderAll(); };
     btn.addEventListener('contextmenu', (ev) => {
@@ -1979,14 +2098,39 @@ function updateTotalsBar(store) {
   $('t-remaining').textContent = fmtRp(t.trem);
 }
 
+function renderRosterChips(store) {
+  const host = $('roster-chips');
+  if (!host) return;
+  const roster = store?.roster || [];
+  const activeIds = new Set((store?.employees || []).map(e => e.rosterId).filter(Boolean));
+  if (roster.length === 0) {
+    host.innerHTML = '<span class="roster-empty">Belum ada karyawan. Tambah nama via form di bawah.</span>';
+    return;
+  }
+  host.innerHTML = roster.map(r => {
+    const inQ = activeIds.has(r.id);
+    const safeId = escapeHtml(r.id);
+    return `<span class="r-chip${inQ ? ' in-queue' : ''}" ${inQ ? '' : `onclick="addToPayroll('${safeId}')" title="Tambah ke gaji periode ini"`}>
+      <span class="chip-name">${escapeHtml(r.n)}</span>
+      <span class="chip-pokok">${fmtRp(r.p)}</span>
+      ${inQ
+        ? '<span style="font-size:10px;margin-left:3px;">✓</span>'
+        : `<button class="chip-del" onclick="event.stopPropagation();removeFromRoster('${safeId}')" title="Hapus dari roster">×</button>`}
+    </span>`;
+  }).join('');
+}
+
 function renderEmployees() {
   const store = getActiveStore();
   $('active-store-name').textContent = store ? store.name : '—';
+
+  renderRosterChips(store);
+
   const grid = $('emp-grid');
   grid.innerHTML = '';
 
   if (!store || store.employees.length === 0) {
-    grid.innerHTML = '<div style="padding:60px 24px;text-align:center;color:var(--ink-mute);font-style:italic;grid-column:1/-1;">Belum ada karyawan di toko ini</div>';
+    grid.innerHTML = '<div style="padding:40px 24px;text-align:center;color:var(--ink-mute);font-style:italic;grid-column:1/-1;">Klik nama karyawan di atas untuk tambah ke daftar gaji periode ini</div>';
   } else {
     store.employees.forEach((e, idx) => {
       const c = computeEmployee(e);
@@ -2183,14 +2327,15 @@ async function payFull(idx) {
   const c = computeEmployee(emp);
   const netAmount = Math.max(0, c.net);
   const ok = await confirmModal(
-    'Tandai Lunas & Kosongkan?',
-    `${emp.n} – ${fmtRp(netAmount)}. Bonus, telat, bolos, dan denda akan dikosongkan untuk periode gaji berikutnya. Nama & gaji pokok tetap.`
+    'Tandai Lunas?',
+    `${emp.n} – ${fmtRp(netAmount)}. Karyawan akan dihapus dari daftar gaji periode ini. Nama tetap di roster untuk periode berikutnya.`
   );
   if (!ok) return;
-  emp.b = 0; emp.l = 0; emp.a = 0; emp.ad = 0; emp.extras = []; emp.paid = 0;
+  store.employees.splice(idx, 1);
   saveState(true);
   renderEmployees();
-  toast(`${emp.n} ✓ Lunas ${fmtRp(netAmount)} · Siap periode baru`);
+  renderSidebar();
+  toast(`${emp.n} ✓ Lunas ${fmtRp(netAmount)}`);
 }
 
 function renderCalendar() {
@@ -2281,7 +2426,7 @@ function showView(v) {
    ============================================================ */
 function addStore() {
   const name = `Toko ${state.stores.length + 1} · Cabang Baru`;
-  state.stores.push({ name, employees: [] });
+  state.stores.push({ name, roster: [], employees: [] });
   state.activeStore = state.stores.length - 1;
   saveState();
   renderAll();
@@ -2299,16 +2444,53 @@ function addEmp() {
   const name = $('new-name').value.trim();
   if (!name) { toast('Nama karyawan kosong'); return; }
   const pokok = Number($('new-pokok').value) || 1500000;
-  getActiveStore().employees.push({ n: name, p: pokok, b: 0, l: 0, a: 0, ad: 0, paid: 0, extras: [] });
+  const store = getActiveStore();
+  if (!Array.isArray(store.roster)) store.roster = [];
+  if (store.roster.some(r => r.n.toLowerCase() === name.toLowerCase())) {
+    toast('Nama sudah ada di roster'); return;
+  }
+  store.roster.push({ id: uid(), n: name, p: pokok });
   $('new-name').value = '';
   $('new-pokok').value = '';
   saveState();
   renderEmployees();
   renderSidebar();
 }
+
+function addToPayroll(rId) {
+  const store = getActiveStore();
+  if (!store) return;
+  if (!Array.isArray(store.roster)) store.roster = [];
+  const rEntry = store.roster.find(r => r.id === rId);
+  if (!rEntry) return;
+  if (store.employees.some(e => e.rosterId === rId)) {
+    toast(`${rEntry.n} sudah ada di daftar gaji`); return;
+  }
+  store.employees.push({ rosterId: rId, n: rEntry.n, p: rEntry.p, b: 0, l: 0, a: 0, ad: 0, paid: 0, extras: [] });
+  saveState(true);
+  renderEmployees();
+  renderSidebar();
+  toast(`${rEntry.n} · ditambah ke gaji ✓`);
+}
+
+async function removeFromRoster(rId) {
+  const store = getActiveStore();
+  if (!store) return;
+  if (!Array.isArray(store.roster)) store.roster = [];
+  const rEntry = store.roster.find(r => r.id === rId);
+  if (!rEntry) return;
+  const ok = await confirmModal('Hapus dari roster?', `"${rEntry.n}" akan dihapus permanen dari daftar karyawan toko ini.`);
+  if (!ok) return;
+  store.roster = store.roster.filter(r => r.id !== rId);
+  store.employees = store.employees.filter(e => e.rosterId !== rId);
+  saveState();
+  renderEmployees();
+  renderSidebar();
+}
+
 async function deleteEmp(idx) {
   const e = getActiveStore().employees[idx];
-  const ok = await confirmModal('Hapus karyawan?', `Karyawan "${e.n}" akan dihapus dari toko ini.`);
+  const ok = await confirmModal('Keluarkan dari gaji?', `"${e.n}" akan dihapus dari daftar gaji periode ini. Nama tetap di roster.`);
   if (!ok) return;
   getActiveStore().employees.splice(idx, 1);
   saveState();
@@ -2325,13 +2507,13 @@ async function resetStore() {
   renderAll();
 }
 async function markAllPaid() {
-  const ok = await confirmModal('Tandai semua lunas?', 'Semua karyawan di toko ini akan ditandai sudah dibayar penuh sesuai gaji bersih masing-masing.');
+  const store = getActiveStore();
+  const count = store?.employees?.length || 0;
+  if (count === 0) { toast('Tidak ada karyawan aktif di daftar gaji'); return; }
+  const ok = await confirmModal('Tandai semua lunas?', `${count} karyawan aktif akan ditandai lunas dan dihapus dari daftar gaji periode ini. Nama tetap tersimpan di roster.`);
   if (!ok) return;
-  getActiveStore().employees.forEach(e => {
-    const c = computeEmployee(e);
-    e.paid = Math.max(0, c.net);
-  });
-  saveState(); renderEmployees();
+  store.employees = [];
+  saveState(); renderEmployees(); renderSidebar();
   toast('Semua karyawan ditandai lunas ✓');
 }
 async function resetPaid() {
