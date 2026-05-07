@@ -957,6 +957,85 @@
     padding: 4px 0;
   }
 
+  /* DONE EMPLOYEES SECTION */
+  .done-section {
+    grid-column: 1 / -1;
+    margin-top: 12px;
+    border: 1px solid rgba(52,211,153,0.18);
+    border-radius: var(--radius-lg);
+    background: rgba(52,211,153,0.03);
+    overflow: hidden;
+  }
+  .done-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 16px;
+    background: rgba(52,211,153,0.07);
+    border-bottom: 1px solid rgba(52,211,153,0.12);
+    flex-wrap: wrap;
+  }
+  .done-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--good);
+    font-weight: 600;
+  }
+  .done-hint {
+    font-size: 11px;
+    color: rgba(52,211,153,0.55);
+  }
+  .done-list {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .done-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.015);
+    transition: background 0.15s;
+  }
+  .done-item:hover { background: rgba(255,255,255,0.035); }
+  .done-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  .done-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: rgba(52,211,153,0.7);
+  }
+  .done-amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--good);
+    min-width: 110px;
+    text-align: right;
+  }
+  .undo-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius);
+    color: var(--ink-mute);
+    font-size: 11px;
+    padding: 4px 9px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .undo-btn:hover { background: rgba(255,255,255,0.1); color: var(--ink); border-color: rgba(255,255,255,0.2); }
+
   /* RESPONSIVE */
   @media (max-width: 1100px) {
     .chart-grid { grid-template-columns: 1fr; }
@@ -1204,6 +1283,7 @@
         </div>
 
         <div class="emp-grid" id="emp-grid"></div>
+        <div id="done-list-host"></div>
         <div class="emp-totals-bar">
           <div class="total-item"><span class="total-lbl">Gaji Pokok</span><span class="total-val" id="t-pokok">0</span></div>
           <div class="total-item"><span class="total-lbl">Bonus</span><span class="total-val" id="t-bonus">0</span></div>
@@ -2102,19 +2182,22 @@ function renderRosterChips(store) {
   const host = $('roster-chips');
   if (!host) return;
   const roster = store?.roster || [];
-  const activeIds = new Set((store?.employees || []).map(e => e.rosterId).filter(Boolean));
+  const allInPayroll = new Set((store?.employees || []).map(e => e.rosterId).filter(Boolean));
+  const doneIds = new Set((store?.employees || []).filter(e => e.done).map(e => e.rosterId).filter(Boolean));
   if (roster.length === 0) {
     host.innerHTML = '<span class="roster-empty">Belum ada karyawan. Tambah nama via form di bawah.</span>';
     return;
   }
   host.innerHTML = roster.map(r => {
-    const inQ = activeIds.has(r.id);
+    const inQ = allInPayroll.has(r.id);
+    const isDone = doneIds.has(r.id);
     const safeId = escapeHtml(r.id);
+    const chipLabel = isDone ? '✓ Lunas' : (inQ ? '✓ Aktif' : '');
     return `<span class="r-chip${inQ ? ' in-queue' : ''}" ${inQ ? '' : `onclick="addToPayroll('${safeId}')" title="Tambah ke gaji periode ini"`}>
       <span class="chip-name">${escapeHtml(r.n)}</span>
       <span class="chip-pokok">${fmtRp(r.p)}</span>
       ${inQ
-        ? '<span style="font-size:10px;margin-left:3px;">✓</span>'
+        ? `<span style="font-size:10px;margin-left:3px;opacity:0.8;">${chipLabel}</span>`
         : `<button class="chip-del" onclick="event.stopPropagation();removeFromRoster('${safeId}')" title="Hapus dari roster">×</button>`}
     </span>`;
   }).join('');
@@ -2129,10 +2212,13 @@ function renderEmployees() {
   const grid = $('emp-grid');
   grid.innerHTML = '';
 
-  if (!store || store.employees.length === 0) {
+  const activeEmps = (store?.employees || []).map((e, idx) => ({ e, idx })).filter(({ e }) => !e.done);
+  const doneEmps  = (store?.employees || []).map((e, idx) => ({ e, idx })).filter(({ e }) => e.done);
+
+  if (activeEmps.length === 0) {
     grid.innerHTML = '<div style="padding:40px 24px;text-align:center;color:var(--ink-mute);font-style:italic;grid-column:1/-1;">Klik nama karyawan di atas untuk tambah ke daftar gaji periode ini</div>';
   } else {
-    store.employees.forEach((e, idx) => {
+    activeEmps.forEach(({ e, idx }, cardNum) => {
       const c = computeEmployee(e);
       const statusLabel = c.status === 'lunas' ? 'Lunas' : (c.status === 'cicil' ? 'Cicil' : 'Belum');
       const extrasHtml = (c.extras || []).map((x, xi) => `
@@ -2146,9 +2232,9 @@ function renderEmployees() {
       card.className = 'emp-card';
       card.innerHTML = `
         <div class="emp-card-head">
-          <span class="emp-num">${String(idx+1).padStart(2,'0')}</span>
+          <span class="emp-num">${String(cardNum+1).padStart(2,'0')}</span>
           <input class="name-input" type="text" value="${escapeHtml(e.n)}" data-i="${idx}" data-f="n" placeholder="Nama karyawan">
-          <button class="icon-btn" data-del="${idx}" title="Hapus karyawan">✕</button>
+          <button class="icon-btn" data-del="${idx}" title="Keluarkan dari gaji">✕</button>
         </div>
         <div class="emp-fields">
           <div class="fields-row col2">
@@ -2214,6 +2300,43 @@ function renderEmployees() {
     grid.querySelectorAll('[data-pay-full]').forEach(btn => btn.addEventListener('click', () => payFull(Number(btn.dataset.payFull))));
     grid.querySelectorAll('[data-add-extra]').forEach(btn => btn.addEventListener('click', () => openAddExtra(Number(btn.dataset.addExtra))));
     grid.querySelectorAll('[data-rm-extra]').forEach(btn => btn.addEventListener('click', () => removeExtra(Number(btn.dataset.rmExtra), Number(btn.dataset.rmExtraI))));
+  }
+
+  // Render done (lunas) section
+  const doneHost = $('done-list-host');
+  if (doneHost) {
+    if (doneEmps.length === 0) {
+      doneHost.innerHTML = '';
+    } else {
+      const totalDonePaid = doneEmps.reduce((s, { e }) => s + (e.paid || 0), 0);
+      doneHost.innerHTML = `
+        <div class="done-section">
+          <div class="done-header">
+            <div>
+              <span class="done-title">✓ Sudah Lunas Periode Ini · ${doneEmps.length} orang</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="done-hint">Total dibayar: <strong style="color:var(--good);">${fmtRp(totalDonePaid)}</strong></span>
+              <span class="done-hint">· Data tersimpan untuk riwayat</span>
+            </div>
+          </div>
+          <div class="done-list">
+            ${doneEmps.map(({ e, idx }) => {
+              const c = computeEmployee(e);
+              const deductInfo = c.totalDeduct > 0 ? ` · potongan ${fmtRp(c.totalDeduct)}` : '';
+              return `
+                <div class="done-item">
+                  <span class="done-name">${escapeHtml(e.n)}</span>
+                  <span class="done-meta">pokok ${fmtRp(c.pokok)}${deductInfo}</span>
+                  <span class="done-amount">${fmtRp(e.paid || 0)}</span>
+                  <span class="pay-badge lunas">Lunas</span>
+                  <button class="undo-btn" onclick="undoPayFull(${idx})" title="Batalkan dan kembalikan ke daftar gaji aktif">↩ Batal Lunas</button>
+                  <button class="icon-btn" onclick="deleteEmp(${idx})" title="Hapus dari daftar gaji">✕</button>
+                </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }
   }
 
   updateTotalsBar(store);
@@ -2328,14 +2451,25 @@ async function payFull(idx) {
   const netAmount = Math.max(0, c.net);
   const ok = await confirmModal(
     'Tandai Lunas?',
-    `${emp.n} – ${fmtRp(netAmount)}. Karyawan akan dihapus dari daftar gaji periode ini. Nama tetap di roster untuk periode berikutnya.`
+    `${emp.n} – ${fmtRp(netAmount)}. Data tersimpan di riwayat periode ini. Gunakan "Simpan ke Riwayat" untuk arsip permanen.`
   );
   if (!ok) return;
-  store.employees.splice(idx, 1);
+  emp.paid = netAmount;
+  emp.done = true;
   saveState(true);
   renderEmployees();
-  renderSidebar();
   toast(`${emp.n} ✓ Lunas ${fmtRp(netAmount)}`);
+}
+
+function undoPayFull(idx) {
+  const store = getActiveStore();
+  if (!store || !store.employees[idx]) return;
+  const emp = store.employees[idx];
+  emp.done = false;
+  emp.paid = 0;
+  saveState(true);
+  renderEmployees();
+  toast(`${emp.n} · dikembalikan ke daftar gaji aktif`);
 }
 
 function renderCalendar() {
@@ -2489,10 +2623,16 @@ async function removeFromRoster(rId) {
 }
 
 async function deleteEmp(idx) {
-  const e = getActiveStore().employees[idx];
-  const ok = await confirmModal('Keluarkan dari gaji?', `"${e.n}" akan dihapus dari daftar gaji periode ini. Nama tetap di roster.`);
+  const store = getActiveStore();
+  if (!store || !store.employees[idx]) return;
+  const e = store.employees[idx];
+  const label = e.done ? 'Hapus dari riwayat periode ini?' : 'Keluarkan dari gaji?';
+  const desc = e.done
+    ? `"${e.n}" akan dihapus dari catatan gaji periode ini. Nama tetap di roster.`
+    : `"${e.n}" akan dikeluarkan dari daftar gaji periode ini. Nama tetap di roster.`;
+  const ok = await confirmModal(label, desc);
   if (!ok) return;
-  getActiveStore().employees.splice(idx, 1);
+  store.employees.splice(idx, 1);
   saveState();
   renderEmployees();
   renderSidebar();
@@ -2508,18 +2648,24 @@ async function resetStore() {
 }
 async function markAllPaid() {
   const store = getActiveStore();
-  const count = store?.employees?.length || 0;
+  const activeEmps = (store?.employees || []).filter(e => !e.done);
+  const count = activeEmps.length;
   if (count === 0) { toast('Tidak ada karyawan aktif di daftar gaji'); return; }
-  const ok = await confirmModal('Tandai semua lunas?', `${count} karyawan aktif akan ditandai lunas dan dihapus dari daftar gaji periode ini. Nama tetap tersimpan di roster.`);
+  const ok = await confirmModal('Tandai semua lunas?', `${count} karyawan aktif akan ditandai lunas. Data tersimpan di riwayat periode ini.`);
   if (!ok) return;
-  store.employees = [];
-  saveState(); renderEmployees(); renderSidebar();
-  toast('Semua karyawan ditandai lunas ✓');
+  store.employees.forEach(e => {
+    if (e.done) return;
+    const c = computeEmployee(e);
+    e.paid = Math.max(0, c.net);
+    e.done = true;
+  });
+  saveState(); renderEmployees();
+  toast(`${count} karyawan ditandai lunas ✓`);
 }
 async function resetPaid() {
-  const ok = await confirmModal('Reset pembayaran?', 'Status "Sudah Dibayar" semua karyawan di toko ini akan dikembalikan ke 0. Gaji pokok, bonus, telat, dan bolos tidak berubah.');
+  const ok = await confirmModal('Reset pembayaran?', 'Status "Sudah Dibayar" semua karyawan di toko ini akan dikembalikan ke 0 dan semua dikembalikan ke daftar gaji aktif. Gaji pokok, bonus, telat, dan bolos tidak berubah.');
   if (!ok) return;
-  getActiveStore().employees.forEach(e => e.paid = 0);
+  getActiveStore().employees.forEach(e => { e.paid = 0; e.done = false; });
   saveState(); renderEmployees();
 }
 async function resetAll() {
