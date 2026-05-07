@@ -1996,14 +1996,21 @@ async function removeExtra(empIdx, extraIdx) {
   renderEmployees();
 }
 
-function payFull(idx) {
+async function payFull(idx) {
   const store = getActiveStore();
   if (!store || !store.employees[idx]) return;
-  const c = computeEmployee(store.employees[idx]);
-  store.employees[idx].paid = Math.max(0, c.net);
+  const emp = store.employees[idx];
+  const c = computeEmployee(emp);
+  const netAmount = Math.max(0, c.net);
+  const ok = await confirmModal(
+    'Tandai Lunas & Kosongkan?',
+    `${emp.n} – ${fmtRp(netAmount)}. Bonus, telat, bolos, dan denda akan dikosongkan untuk periode gaji berikutnya. Nama & gaji pokok tetap.`
+  );
+  if (!ok) return;
+  emp.b = 0; emp.l = 0; emp.a = 0; emp.ad = 0; emp.extras = []; emp.paid = 0;
   saveState(true);
   renderEmployees();
-  toast(`${store.employees[idx].n} ditandai lunas ✓`);
+  toast(`${emp.n} ✓ Lunas ${fmtRp(netAmount)} · Siap periode baru`);
 }
 
 function renderCalendar() {
