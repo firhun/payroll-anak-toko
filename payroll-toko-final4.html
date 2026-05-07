@@ -177,6 +177,7 @@
 
   /* MAIN */
   .main { padding: 28px 36px 60px; overflow-x: hidden; }
+  .main.emp-view { padding-left: 16px; padding-right: 16px; }
 
   .topbar {
     display: flex;
@@ -399,13 +400,13 @@
 
   /* TABLE */
   .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+  table { width: 100%; border-collapse: collapse; min-width: 1520px; }
   thead th {
     text-align: left;
-    padding: 12px 14px;
+    padding: 14px 16px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.15em;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--ink-mute);
     font-weight: 600;
@@ -416,24 +417,24 @@
   thead th.num { text-align: right; }
   tbody tr { border-bottom: 1px solid var(--line-soft); transition: background 0.1s; }
   tbody tr:hover { background: rgba(124,111,255,0.05); }
-  tbody td { padding: 8px 14px; font-size: 13px; vertical-align: middle; }
-  tbody td.num { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  tbody td { padding: 10px 14px; font-size: 13.5px; vertical-align: middle; }
+  tbody td.num { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
   .name-input, .num-input {
     background: transparent;
     border: 1px solid transparent;
     color: var(--ink);
     font-family: inherit;
-    font-size: 13px;
-    padding: 6px 8px;
-    border-radius: 4px;
+    font-size: 14px;
+    padding: 8px 10px;
+    border-radius: 6px;
     outline: none;
-    transition: all 0.1s;
+    transition: all 0.15s;
     width: 100%;
   }
-  .num-input { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .num-input { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
   .name-input { font-weight: 500; }
-  .name-input:hover, .num-input:hover { border-color: var(--line); background: rgba(255,255,255,0.03); }
-  .name-input:focus, .num-input:focus { border-color: var(--accent); background: rgba(124,111,255,0.05); }
+  .name-input:hover, .num-input:hover { border-color: var(--line); background: rgba(255,255,255,0.04); }
+  .name-input:focus, .num-input:focus { border-color: var(--accent); background: rgba(124,111,255,0.07); box-shadow: 0 0 0 3px rgba(124,111,255,0.12); }
 
   .deduction { color: #f87171; }
   .net-pay { font-weight: 600; font-size: 13px; font-family: 'JetBrains Mono', monospace; }
@@ -919,20 +920,20 @@
           <table>
             <thead>
               <tr>
-                <th style="width:30px;">#</th>
-                <th>Nama Karyawan</th>
-                <th class="num">Gaji Pokok</th>
-                <th class="num">Bonus</th>
-                <th class="num">Telat (mnt)</th>
-                <th class="num" title="Hari biasa: gaji pokok ÷ 30 per hari">Bolos Biasa</th>
-                <th class="num" title="Hari libur (Sabtu/Minggu/tanggal merah): denda tetap">Denda Libur</th>
-                <th>Denda Lain</th>
-                <th class="num">Total Potongan</th>
-                <th class="num" style="background:var(--gold-soft);color:var(--gold);">Akan Dibayar</th>
-                <th class="num" style="background:var(--good-soft);color:var(--good);">Sudah Dibayar</th>
-                <th class="num">Sisa</th>
-                <th>Status</th>
-                <th style="width:40px;"></th>
+                <th style="width:36px;">#</th>
+                <th style="min-width:170px;">Nama Karyawan</th>
+                <th class="num" style="min-width:140px;">Gaji Pokok</th>
+                <th class="num" style="min-width:120px;">Bonus</th>
+                <th class="num" style="min-width:110px;">Telat (mnt)</th>
+                <th class="num" style="min-width:120px;" title="Hari biasa: gaji pokok ÷ 30 per hari">Bolos Biasa</th>
+                <th class="num" style="min-width:120px;" title="Hari libur (Sabtu/Minggu/tanggal merah): denda tetap">Denda Libur</th>
+                <th style="min-width:190px;">Denda Lain</th>
+                <th class="num" style="min-width:130px;">Total Potongan</th>
+                <th class="num" style="min-width:140px;background:var(--gold-soft);color:var(--gold);">Akan Dibayar</th>
+                <th class="num" style="min-width:160px;background:var(--good-soft);color:var(--good);">Sudah Dibayar</th>
+                <th class="num" style="min-width:110px;">Sisa</th>
+                <th style="min-width:90px;">Status</th>
+                <th style="width:44px;"></th>
               </tr>
             </thead>
             <tbody id="emp-tbody"></tbody>
@@ -2071,6 +2072,7 @@ function renderSettings() {
 function renderAll() {
   renderControls();
   renderSidebar();
+  document.querySelector('.main').classList.toggle('emp-view', state.view === 'employees');
   if (state.view === 'dashboard') renderDashboard();
   else if (state.view === 'employees') renderEmployees();
   else if (state.view === 'history') renderHistory();
@@ -2086,6 +2088,7 @@ function showView(v) {
   document.querySelectorAll('.nav-item').forEach(b => {
     b.classList.toggle('active', b.dataset.view === v);
   });
+  document.querySelector('.main').classList.toggle('emp-view', v === 'employees');
   saveState(true);
   if (v === 'dashboard') renderDashboard();
   else if (v === 'employees') renderEmployees();
