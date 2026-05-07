@@ -679,6 +679,194 @@
   .holiday-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 180px; overflow-y: auto; }
   .h-chip { background: rgba(248,113,113,0.1); color: #f87171; border: 1px solid rgba(248,113,113,0.2); padding: 6px 12px; border-radius: 100px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; }
 
+  /* EMPLOYEE CARD GRID */
+  .emp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 14px;
+    padding: 20px 24px;
+  }
+  .emp-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+  }
+  .emp-card:hover {
+    border-color: rgba(124,111,255,0.25);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+  }
+  .emp-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.025);
+  }
+  .emp-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-mute);
+    font-weight: 600;
+    min-width: 20px;
+  }
+  .emp-card-head .name-input {
+    flex: 1;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 4px 7px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    color: var(--ink);
+    outline: none;
+    transition: all 0.15s;
+  }
+  .emp-card-head .name-input:hover { background: rgba(255,255,255,0.04); border-color: var(--line); }
+  .emp-card-head .name-input:focus { background: rgba(124,111,255,0.07); border-color: var(--accent); }
+
+  .emp-fields {
+    padding: 12px 14px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .fields-row { display: grid; gap: 8px; }
+  .fields-row.col2 { grid-template-columns: 1fr 1fr; }
+  .fields-row.col3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  .field-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    white-space: nowrap;
+  }
+  .field-hint { font-size: 7.5px; color: var(--accent); margin-left: 3px; }
+  .field-group .num-input {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 7px;
+    padding: 8px 10px;
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    text-align: right;
+    width: 100%;
+    outline: none;
+    transition: all 0.15s;
+  }
+  .field-group .num-input:hover { border-color: rgba(255,255,255,0.15); }
+  .field-group .num-input:focus {
+    border-color: var(--accent);
+    background: rgba(124,111,255,0.07);
+    box-shadow: 0 0 0 3px rgba(124,111,255,0.12);
+  }
+
+  .emp-extras { padding: 0 14px 10px; }
+
+  .emp-card-stats {
+    padding: 10px 14px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: rgba(255,255,255,0.015);
+  }
+  .stat-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .sl-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .sl-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .sl-val.s-deduction { color: #f87171; }
+  .sl-val.s-gold { color: var(--gold); }
+  .sl-val.s-good { color: var(--good); }
+  .sl-val.s-accent { color: var(--accent); }
+
+  .emp-paid-row {
+    padding: 10px 14px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .paid-input-wrap {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .paid-input-wrap .num-input {
+    flex: 1;
+    background: rgba(52,211,153,0.06);
+    border: 1px solid rgba(52,211,153,0.18);
+    border-radius: 7px;
+    padding: 8px 10px;
+    color: var(--good);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    text-align: right;
+    outline: none;
+    transition: all 0.15s;
+    width: 100%;
+  }
+  .paid-input-wrap .num-input:focus {
+    border-color: var(--good);
+    box-shadow: 0 0 0 3px rgba(52,211,153,0.12);
+  }
+
+  .emp-card-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 14px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.015);
+    margin-top: auto;
+  }
+
+  /* TOTALS BAR */
+  .emp-totals-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 0;
+    border-top: 2px solid var(--line);
+    background: rgba(255,255,255,0.02);
+    padding: 14px 24px;
+  }
+  .total-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-right: 20px;
+    margin-right: 20px;
+    border-right: 1px solid var(--line);
+  }
+  .total-item:last-child { border-right: none; padding-right: 0; margin-right: 0; }
+  .total-lbl { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-mute); }
+  .total-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+  .total-item.t-bad  .total-val { color: #f87171; }
+  .total-item.t-gold .total-val { color: var(--gold); }
+  .total-item.t-good .total-val { color: var(--good); }
+  .total-item.t-accent .total-val { color: var(--accent); }
+
   /* RESPONSIVE */
   @media (max-width: 1100px) {
     .chart-grid { grid-template-columns: 1fr; }
@@ -916,44 +1104,17 @@
             <button class="btn ghost sm" id="btn-reset-store">Reset Toko</button>
           </div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:36px;">#</th>
-                <th style="min-width:170px;">Nama Karyawan</th>
-                <th class="num" style="min-width:140px;">Gaji Pokok</th>
-                <th class="num" style="min-width:120px;">Bonus</th>
-                <th class="num" style="min-width:110px;">Telat (mnt)</th>
-                <th class="num" style="min-width:120px;" title="Hari biasa: gaji pokok ÷ 30 per hari">Bolos Biasa</th>
-                <th class="num" style="min-width:120px;" title="Hari libur (Sabtu/Minggu/tanggal merah): denda tetap">Denda Libur</th>
-                <th style="min-width:190px;">Denda Lain</th>
-                <th class="num" style="min-width:130px;">Total Potongan</th>
-                <th class="num" style="min-width:140px;background:var(--gold-soft);color:var(--gold);">Akan Dibayar</th>
-                <th class="num" style="min-width:160px;background:var(--good-soft);color:var(--good);">Sudah Dibayar</th>
-                <th class="num" style="min-width:110px;">Sisa</th>
-                <th style="min-width:90px;">Status</th>
-                <th style="width:44px;"></th>
-              </tr>
-            </thead>
-            <tbody id="emp-tbody"></tbody>
-            <tfoot>
-              <tr>
-                <td colspan="2" class="lbl">Total</td>
-                <td class="num" id="t-pokok">0</td>
-                <td class="num" id="t-bonus">0</td>
-                <td class="num" id="t-late">0</td>
-                <td class="num" id="t-absent-daily">0</td>
-                <td class="num" id="t-absent">0</td>
-                <td></td>
-                <td class="num deduction" id="t-deduct">0</td>
-                <td class="num total-net" id="t-net">0</td>
-                <td class="num" id="t-paid" style="color:var(--good);">0</td>
-                <td class="num" id="t-remaining" style="color:var(--accent);">0</td>
-                <td colspan="2"></td>
-              </tr>
-            </tfoot>
-          </table>
+        <div class="emp-grid" id="emp-grid"></div>
+        <div class="emp-totals-bar">
+          <div class="total-item"><span class="total-lbl">Gaji Pokok</span><span class="total-val" id="t-pokok">0</span></div>
+          <div class="total-item"><span class="total-lbl">Bonus</span><span class="total-val" id="t-bonus">0</span></div>
+          <div class="total-item"><span class="total-lbl">Telat (mnt)</span><span class="total-val" id="t-late">0</span></div>
+          <div class="total-item"><span class="total-lbl">Bolos Biasa</span><span class="total-val" id="t-absent-daily">0</span></div>
+          <div class="total-item"><span class="total-lbl">Denda Libur</span><span class="total-val" id="t-absent">0</span></div>
+          <div class="total-item t-bad"><span class="total-lbl">Total Potongan</span><span class="total-val" id="t-deduct">0</span></div>
+          <div class="total-item t-gold"><span class="total-lbl">Akan Dibayar</span><span class="total-val" id="t-net">Rp 0</span></div>
+          <div class="total-item t-good"><span class="total-lbl">Sudah Dibayar</span><span class="total-val" id="t-paid">Rp 0</span></div>
+          <div class="total-item t-accent"><span class="total-lbl">Sisa</span><span class="total-val" id="t-remaining">Rp 0</span></div>
         </div>
         <div class="add-row-bar">
           <input type="text" id="new-name" placeholder="Nama karyawan baru…">
@@ -1805,66 +1966,7 @@ function renderDashboard() {
   }
 }
 
-function renderEmployees() {
-  const store = getActiveStore();
-  $('active-store-name').textContent = store ? store.name : '—';
-  const tbody = $('emp-tbody');
-  tbody.innerHTML = '';
-
-  if (!store || store.employees.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="14" style="padding:60px 20px;text-align:center;color:var(--ink-mute);font-style:italic;">Belum ada karyawan di toko ini</td></tr>';
-  } else {
-    store.employees.forEach((e, idx) => {
-      const c = computeEmployee(e);
-      const tr = document.createElement('tr');
-      const statusLabel = c.status === 'lunas' ? 'Lunas' : (c.status === 'cicil' ? 'Cicil' : 'Belum');
-      const dailyHint = c.dailyRate > 0 ? `<div style="font-size:9px;color:var(--ink-mute);margin-top:2px;">Rp ${fmt(c.dailyRate)}/hari</div>` : '';
-      const extrasHtml = (c.extras || []).map((x, xi) => `
-        <span class="extra-chip" title="${escapeHtml(x.name)}: Rp ${fmt(x.amount)}">
-          <span class="name">${escapeHtml(x.name)}</span>
-          <span class="amount">${fmt(x.amount)}</span>
-          <button class="remove" data-rm-extra="${idx}" data-rm-extra-i="${xi}" title="Hapus">×</button>
-        </span>
-      `).join('');
-      tr.innerHTML = `
-        <td style="color:var(--ink-mute);font-family:'JetBrains Mono',monospace;font-size:11px;">${String(idx+1).padStart(2,'0')}</td>
-        <td><input class="name-input" type="text" value="${escapeHtml(e.n)}" data-i="${idx}" data-f="n"></td>
-        <td class="num"><input class="num-input" type="number" min="0" step="10000" value="${e.p}" data-i="${idx}" data-f="p"></td>
-        <td class="num"><input class="num-input" type="number" min="0" step="10000" value="${e.b}" data-i="${idx}" data-f="b"></td>
-        <td class="num"><input class="num-input" type="number" min="0" step="1" value="${e.l}" data-i="${idx}" data-f="l"></td>
-        <td class="num">
-          <input class="num-input" type="number" min="0" step="1" value="${e.ad}" data-i="${idx}" data-f="ad">
-          ${dailyHint}
-        </td>
-        <td class="num">
-          <input class="num-input" type="number" min="0" step="1" value="${e.a}" data-i="${idx}" data-f="a">
-          ${state.rateAbsent > 0 ? `<div style="font-size:9px;color:var(--ink-mute);margin-top:2px;">Rp ${fmt(state.rateAbsent)}/hari</div>` : ''}
-        </td>
-        <td class="extras-cell">
-          <div class="extras-list">
-            ${extrasHtml}
-            <button class="add-extra-btn" data-add-extra="${idx}" title="Tambah denda">+ Denda</button>
-          </div>
-        </td>
-        <td class="num deduction">${fmt(c.totalDeduct)}</td>
-        <td class="num net-pay ${c.net>=0?'positive':'negative'}" style="background:rgba(212,162,86,0.06);">${fmt(c.net)}</td>
-        <td class="num" style="background:rgba(74,222,128,0.06);">
-          <input class="num-input" type="number" min="0" step="10000" value="${e.paid}" data-i="${idx}" data-f="paid" style="color:var(--good);">
-          <button class="pay-quick-btn" data-pay-full="${idx}" title="Bayar penuh">Lunas</button>
-        </td>
-        <td class="num deduction">${fmt(Math.max(0, c.remaining))}</td>
-        <td><span class="pay-badge ${c.status}">${statusLabel}</span></td>
-        <td><button class="icon-btn" data-del="${idx}" title="Hapus">✕</button></td>
-      `;
-      tbody.appendChild(tr);
-    });
-    tbody.querySelectorAll('input').forEach(inp => inp.addEventListener('input', onCellEdit));
-    tbody.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', () => deleteEmp(Number(btn.dataset.del))));
-    tbody.querySelectorAll('[data-pay-full]').forEach(btn => btn.addEventListener('click', () => payFull(Number(btn.dataset.payFull))));
-    tbody.querySelectorAll('[data-add-extra]').forEach(btn => btn.addEventListener('click', () => openAddExtra(Number(btn.dataset.addExtra))));
-    tbody.querySelectorAll('[data-rm-extra]').forEach(btn => btn.addEventListener('click', () => removeExtra(Number(btn.dataset.rmExtra), Number(btn.dataset.rmExtraI))));
-  }
-
+function updateTotalsBar(store) {
   const t = computeStoreTotals(store || {employees:[]});
   $('t-pokok').textContent = fmt(t.tp);
   $('t-bonus').textContent = fmt(t.tb);
@@ -1877,6 +1979,102 @@ function renderEmployees() {
   $('t-remaining').textContent = fmtRp(t.trem);
 }
 
+function renderEmployees() {
+  const store = getActiveStore();
+  $('active-store-name').textContent = store ? store.name : '—';
+  const grid = $('emp-grid');
+  grid.innerHTML = '';
+
+  if (!store || store.employees.length === 0) {
+    grid.innerHTML = '<div style="padding:60px 24px;text-align:center;color:var(--ink-mute);font-style:italic;grid-column:1/-1;">Belum ada karyawan di toko ini</div>';
+  } else {
+    store.employees.forEach((e, idx) => {
+      const c = computeEmployee(e);
+      const statusLabel = c.status === 'lunas' ? 'Lunas' : (c.status === 'cicil' ? 'Cicil' : 'Belum');
+      const extrasHtml = (c.extras || []).map((x, xi) => `
+        <span class="extra-chip" title="${escapeHtml(x.name)}: Rp ${fmt(x.amount)}">
+          <span class="name">${escapeHtml(x.name)}</span>
+          <span class="amount">${fmt(x.amount)}</span>
+          <button class="remove" data-rm-extra="${idx}" data-rm-extra-i="${xi}" title="Hapus">×</button>
+        </span>
+      `).join('');
+      const card = document.createElement('div');
+      card.className = 'emp-card';
+      card.innerHTML = `
+        <div class="emp-card-head">
+          <span class="emp-num">${String(idx+1).padStart(2,'0')}</span>
+          <input class="name-input" type="text" value="${escapeHtml(e.n)}" data-i="${idx}" data-f="n" placeholder="Nama karyawan">
+          <button class="icon-btn" data-del="${idx}" title="Hapus karyawan">✕</button>
+        </div>
+        <div class="emp-fields">
+          <div class="fields-row col2">
+            <div class="field-group">
+              <div class="field-lbl">Gaji Pokok</div>
+              <input class="num-input" type="number" min="0" step="10000" value="${e.p||0}" data-i="${idx}" data-f="p">
+            </div>
+            <div class="field-group">
+              <div class="field-lbl">Bonus</div>
+              <input class="num-input" type="number" min="0" step="10000" value="${e.b||0}" data-i="${idx}" data-f="b">
+            </div>
+          </div>
+          <div class="fields-row col3">
+            <div class="field-group">
+              <div class="field-lbl">Telat <span class="field-hint">(mnt)</span></div>
+              <input class="num-input" type="number" min="0" step="1" value="${e.l||0}" data-i="${idx}" data-f="l">
+            </div>
+            <div class="field-group">
+              <div class="field-lbl">Bolos <span class="field-hint daily-hint">${c.dailyRate > 0 ? fmt(c.dailyRate)+'/hr' : '(hari)'}</span></div>
+              <input class="num-input" type="number" min="0" step="1" value="${e.ad||0}" data-i="${idx}" data-f="ad">
+            </div>
+            <div class="field-group">
+              <div class="field-lbl">Libur <span class="field-hint">${state.rateAbsent > 0 ? fmt(state.rateAbsent)+'/hr' : '(hari)'}</span></div>
+              <input class="num-input" type="number" min="0" step="1" value="${e.a||0}" data-i="${idx}" data-f="a">
+            </div>
+          </div>
+        </div>
+        <div class="emp-extras">
+          <div class="extras-list">
+            ${extrasHtml}
+            <button class="add-extra-btn" data-add-extra="${idx}">+ Denda</button>
+          </div>
+        </div>
+        <div class="emp-card-stats">
+          <div class="stat-line">
+            <span class="sl-label">Total Potongan</span>
+            <span class="sl-val s-deduction card-deduction">${fmtRp(c.totalDeduct)}</span>
+          </div>
+          <div class="stat-line">
+            <span class="sl-label">Akan Dibayar</span>
+            <span class="sl-val s-gold card-net">${fmtRp(c.net)}</span>
+          </div>
+        </div>
+        <div class="emp-paid-row">
+          <div class="field-lbl">Sudah Dibayar</div>
+          <div class="paid-input-wrap">
+            <input class="num-input" type="number" min="0" step="10000" value="${e.paid||0}" data-i="${idx}" data-f="paid">
+            <button class="pay-quick-btn" data-pay-full="${idx}">Lunas</button>
+          </div>
+          <div class="stat-line">
+            <span class="sl-label">Sisa</span>
+            <span class="sl-val s-accent card-remaining">${fmtRp(Math.max(0, c.remaining))}</span>
+          </div>
+        </div>
+        <div class="emp-card-foot">
+          <span class="pay-badge ${c.status}">${statusLabel}</span>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+    grid.querySelectorAll('input').forEach(inp => inp.addEventListener('input', onCellEdit));
+    grid.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', () => deleteEmp(Number(btn.dataset.del))));
+    grid.querySelectorAll('[data-pay-full]').forEach(btn => btn.addEventListener('click', () => payFull(Number(btn.dataset.payFull))));
+    grid.querySelectorAll('[data-add-extra]').forEach(btn => btn.addEventListener('click', () => openAddExtra(Number(btn.dataset.addExtra))));
+    grid.querySelectorAll('[data-rm-extra]').forEach(btn => btn.addEventListener('click', () => removeExtra(Number(btn.dataset.rmExtra), Number(btn.dataset.rmExtraI))));
+  }
+
+  updateTotalsBar(store);
+}
+
 function onCellEdit(ev) {
   const i = Number(ev.target.dataset.i);
   const f = ev.target.dataset.f;
@@ -1886,39 +2084,20 @@ function onCellEdit(ev) {
   store.employees[i][f] = v;
   saveState(true);
 
-  // Update angka turunan tanpa rebuild seluruh row biar focus tidak hilang
   const c = computeEmployee(store.employees[i]);
-  const tr = ev.target.closest('tr');
-  const tds = tr.querySelectorAll('td');
-  // Layout: 0:#  1:name  2:pokok  3:bonus  4:late  5:bolosBiasa  6:bolosLibur  7:extras  8:potongan  9:akan  10:paid  11:sisa  12:status  13:hapus
-  // Update hint di kolom 5 (bolos biasa)
-  const dailyHint = tds[5].querySelector('div');
-  if (dailyHint) dailyHint.textContent = c.dailyRate > 0 ? `Rp ${fmt(c.dailyRate)}/hari` : '';
-  else if (c.dailyRate > 0) {
-    const div = document.createElement('div');
-    div.style.cssText = 'font-size:9px;color:var(--ink-mute);margin-top:2px;';
-    div.textContent = `Rp ${fmt(c.dailyRate)}/hari`;
-    tds[5].appendChild(div);
+  const card = ev.target.closest('.emp-card');
+  if (card) {
+    const hint = card.querySelector('.daily-hint');
+    if (hint) hint.textContent = c.dailyRate > 0 ? fmt(c.dailyRate)+'/hr' : '(hari)';
+    card.querySelector('.card-deduction').textContent = fmtRp(c.totalDeduct);
+    card.querySelector('.card-net').textContent = fmtRp(c.net);
+    card.querySelector('.card-remaining').textContent = fmtRp(Math.max(0, c.remaining));
+    const badge = card.querySelector('.pay-badge');
+    const statusLabel = c.status === 'lunas' ? 'Lunas' : (c.status === 'cicil' ? 'Cicil' : 'Belum');
+    badge.className = `pay-badge ${c.status}`;
+    badge.textContent = statusLabel;
   }
-  tds[8].textContent = fmt(c.totalDeduct);
-  tds[9].textContent = fmt(c.net);
-  tds[9].className = 'num net-pay ' + (c.net>=0?'positive':'negative');
-  tds[9].setAttribute('style', 'background:rgba(212,162,86,0.06);');
-  tds[11].textContent = fmt(Math.max(0, c.remaining));
-  const statusLabel = c.status === 'lunas' ? 'Lunas' : (c.status === 'cicil' ? 'Cicil' : 'Belum');
-  tds[12].innerHTML = `<span class="pay-badge ${c.status}">${statusLabel}</span>`;
-
-  // Update totals
-  const t = computeStoreTotals(store);
-  $('t-pokok').textContent = fmt(t.tp);
-  $('t-bonus').textContent = fmt(t.tb);
-  $('t-late').textContent = fmt(t.tl);
-  $('t-absent').textContent = fmt(t.ta);
-  $('t-absent-daily').textContent = fmt(t.tad);
-  $('t-deduct').textContent = fmt(t.tdeduct);
-  $('t-net').textContent = fmtRp(t.tn);
-  $('t-paid').textContent = fmtRp(t.tpaid);
-  $('t-remaining').textContent = fmtRp(t.trem);
+  updateTotalsBar(store);
 }
 
 /* ============================================================
