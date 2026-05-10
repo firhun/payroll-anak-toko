@@ -1845,6 +1845,22 @@ function _idb(mode, cb) {
 const _idbGet = () => _idb('readonly', s => new Promise(r => { const q = s.get('main'); q.onsuccess = () => r(q.result ?? null); q.onerror = () => r(null); }));
 const _idbPut = v => _idb('readwrite', (s, tx) => new Promise(r => { s.put(v, 'main'); tx.oncomplete = r; tx.onerror = r; }));
 
+/* IndexedDB sebagai backup data (jalan di file:// maupun https://) */
+const IDB_DATA = 'payroll_backup_v1';
+function idbData(mode, cb) {
+  return new Promise(res => {
+    const r = indexedDB.open(IDB_DATA, 1);
+    r.onupgradeneeded = e => e.target.result.createObjectStore('s');
+    r.onsuccess = e => {
+      try { const tx = e.target.result.transaction('s', mode); res(cb(tx.objectStore('s'), tx)); }
+      catch(_) { res(null); }
+    };
+    r.onerror = () => res(null);
+  });
+}
+const idbSaveData = raw => idbData('readwrite', (s, tx) => new Promise(r => { s.put(raw, 'k'); tx.oncomplete = r; tx.onerror = r; }));
+const idbLoadData = ()  => idbData('readonly',  s     => new Promise(r => { const q = s.get('k'); q.onsuccess = () => r(q.result ?? null); q.onerror = () => r(null); }));
+
 async function writeToFile() {
   if (!_fh || !_fhReady) return;
   try {
@@ -1865,11 +1881,13 @@ function updateFHStatus() {
 
   if (statusEl) {
     if (_fhReady) {
-      statusEl.innerHTML = '<span class="fh-status-ok">📁 Auto-save aktif</span>';
+      statusEl.innerHTML = '<span class="fh-status-ok">📁 Auto-save ke file aktif</span>';
+    } else if (isFile) {
+      statusEl.innerHTML = '<span class="fh-status-ok" style="background:var(--info-soft);color:var(--info);">💾 Auto-save IndexedDB aktif</span>';
     } else if (hasFSA) {
-      statusEl.innerHTML = '<button class="fh-status-btn" onclick="setupFileSave()" title="Aktifkan auto-save ke file agar data tidak hilang">⚠️ Aktifkan Auto-save</button>';
+      statusEl.innerHTML = '<button class="fh-status-btn" onclick="setupFileSave()" title="Aktifkan auto-save ke file permanen">⚡ Simpan ke File</button>';
     } else {
-      statusEl.innerHTML = '';
+      statusEl.innerHTML = '<span class="fh-status-ok" style="background:var(--info-soft);color:var(--info);">💾 Auto-save aktif</span>';
     }
   }
 
@@ -1879,15 +1897,14 @@ function updateFHStatus() {
     } else if (isFile) {
       bannerEl.style.display = 'flex';
       bannerEl.className = 'filesave-banner';
-      bannerEl.innerHTML = `⚠️ <strong>Data hanya tersimpan di browser ini.</strong>
-        Buka via GitHub Pages agar bisa pakai auto-save permanen:
-        <a href="https://firhun.github.io/payroll-anak-toko/" target="_blank">firhun.github.io/payroll-anak-toko</a>
-        &nbsp;·&nbsp; Atau gunakan tombol <strong>Backup Data</strong> sebelum tutup browser.`;
+      bannerEl.innerHTML = `💾 <strong>Auto-save ke IndexedDB aktif</strong> — data tersimpan otomatis walau browser ditutup.
+        Untuk keamanan lebih, buka via <a href="https://firhun.github.io/payroll-anak-toko/" target="_blank">GitHub Pages</a>
+        dan aktifkan <strong>Simpan ke File</strong> agar data tersimpan di file fisik di komputer.`;
     } else if (hasFSA && !_fhReady) {
       bannerEl.style.display = 'flex';
       bannerEl.className = 'filesave-banner';
-      bannerEl.innerHTML = `⚠️ <strong>Auto-save belum aktif.</strong> Klik <button class="fh-status-btn" onclick="setupFileSave()" style="margin:0 4px;">⚡ Aktifkan Auto-save</button>
-        agar data tidak hilang walau browser ditutup / cache dihapus.`;
+      bannerEl.innerHTML = `💾 Auto-save IndexedDB aktif. Klik <button class="fh-status-btn" onclick="setupFileSave()" style="margin:0 6px;">⚡ Simpan ke File</button>
+        untuk backup permanen ke file fisik di komputer (lebih aman).`;
     } else {
       bannerEl.style.display = 'none';
     }
@@ -1948,8 +1965,10 @@ async function initFileSave() {
 
 function saveState(silent) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(state));
-    writeToFile();
+    const raw = JSON.stringify(state);
+    localStorage.setItem(KEY, raw);
+    idbSaveData(raw);  // backup ke IndexedDB (bekerja di semua protokol)
+    writeToFile();     // backup ke file (hanya di https://)
     if (!silent) toast('Tersimpan ✓');
   } catch(e) { toast('Gagal menyimpan'); }
 }
@@ -3802,7 +3821,36 @@ function importJson() {
    BIND & INIT — dipanggil setelah login berhasil
    ============================================================ */
 async function initMainApp() {
+// Recovery: kalau localStorage kosong, coba muat dari IndexedDB
+if (!localStorage.getItem(KEY)) {
+  try {
+    const raw = await idbLoadData();
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      parsed.stores?.forEach(s => {
+        if (!Array.isArray(s.roster)) s.roster = [];
+        s.employees?.forEach(e => {
+          if (e.a   === undefined) e.a   = 0;
+          if (e.ad  === undefined) e.ad  = 0;
+          if (e.paid=== undefined) e.paid= 0;
+          if (!Array.isArray(e.extras)) e.extras = [];
+        });
+      });
+      if (!Array.isArray(parsed.history)) parsed.history = [];
+      state = parsed;
+      localStorage.setItem(KEY, raw);
+      toast('Data dipulihkan dari backup otomatis ✓');
+    }
+  } catch(_) {}
+}
 await initFileSave();
+// Pastikan IDB selalu ter-update saat menutup tab/browser
+window.addEventListener('beforeunload', () => {
+  const raw = JSON.stringify(state);
+  idbSaveData(raw);
+  const r2 = localStorage.getItem(KEY);
+  if (!r2) localStorage.setItem(KEY, raw);
+});
 $('date-start').addEventListener('change', e => { state.dateStart = e.target.value; saveState(true); if (state.view==='dashboard') renderDashboard(); else if (state.view==='calendar') renderCalendar(); });
 $('date-end').addEventListener('change', e => { state.dateEnd = e.target.value; saveState(true); if (state.view==='dashboard') renderDashboard(); else if (state.view==='calendar') renderCalendar(); });
 $('rate-late').addEventListener('input', e => { state.rateLate = Number(e.target.value)||0; saveState(true); renderAll(); });
