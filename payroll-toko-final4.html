@@ -1036,6 +1036,46 @@
   }
   .undo-btn:hover { background: rgba(255,255,255,0.1); color: var(--ink); border-color: rgba(255,255,255,0.2); }
 
+  /* FILE SAVE BANNER */
+  .filesave-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    background: rgba(251,191,36,0.08);
+    border: 1px solid rgba(251,191,36,0.25);
+    border-radius: var(--radius-lg);
+    margin-bottom: 18px;
+    font-size: 13px;
+    color: var(--warn);
+    flex-wrap: wrap;
+  }
+  .filesave-banner strong { color: var(--ink); }
+  .filesave-banner a { color: var(--accent); text-decoration: underline; }
+  .fh-status-ok {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--good);
+    background: var(--good-soft);
+    padding: 4px 10px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .fh-status-btn {
+    font-size: 11px;
+    padding: 5px 11px;
+    border-radius: 100px;
+    border: 1px solid rgba(251,191,36,0.4);
+    background: rgba(251,191,36,0.1);
+    color: var(--warn);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .fh-status-btn:hover { background: rgba(251,191,36,0.2); }
+
   /* RESPONSIVE */
   @media (max-width: 1100px) {
     .chart-grid { grid-template-columns: 1fr; }
@@ -1126,11 +1166,13 @@
         <h1>Sistem <em>Gaji</em> Anak Toko</h1>
       </div>
       <div class="top-actions">
+        <div id="file-save-status"></div>
         <button class="btn ghost sm" id="btn-print">Cetak / PDF</button>
         <button class="btn ghost sm" id="btn-export-json">Backup Data</button>
         <button class="btn sm" id="btn-save-history">💾 Simpan ke Riwayat</button>
       </div>
     </div>
+    <div id="filesave-banner" style="display:none;"></div>
 
     <!-- VIEW: DASHBOARD -->
     <div id="view-dashboard">
@@ -1780,9 +1822,134 @@ function loadState() {
   } catch(e) {}
   return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
+/* ============================================================
+   AUTO-SAVE KE FILE (File System Access API)
+   Data disimpan ke file JSON di komputer → tidak hilang walau browser clear data
+   ============================================================ */
+let _fh = null;    // FileSystemFileHandle
+let _fhReady = false;
+
+function _idb(mode, cb) {
+  return new Promise(res => {
+    const r = indexedDB.open('payroll_fsh_v1', 1);
+    r.onupgradeneeded = e => e.target.result.createObjectStore('fh');
+    r.onsuccess = e => {
+      try {
+        const tx = e.target.result.transaction('fh', mode);
+        res(cb(tx.objectStore('fh'), tx));
+      } catch(_) { res(null); }
+    };
+    r.onerror = () => res(null);
+  });
+}
+const _idbGet = () => _idb('readonly', s => new Promise(r => { const q = s.get('main'); q.onsuccess = () => r(q.result ?? null); q.onerror = () => r(null); }));
+const _idbPut = v => _idb('readwrite', (s, tx) => new Promise(r => { s.put(v, 'main'); tx.oncomplete = r; tx.onerror = r; }));
+
+async function writeToFile() {
+  if (!_fh || !_fhReady) return;
+  try {
+    const w = await _fh.createWritable();
+    await w.write(JSON.stringify(state, null, 2));
+    await w.close();
+  } catch(e) {
+    _fhReady = false;
+    updateFHStatus();
+  }
+}
+
+function updateFHStatus() {
+  const statusEl = $('file-save-status');
+  const bannerEl = $('filesave-banner');
+  const isFile = location.protocol === 'file:';
+  const hasFSA = !!window.showSaveFilePicker;
+
+  if (statusEl) {
+    if (_fhReady) {
+      statusEl.innerHTML = '<span class="fh-status-ok">📁 Auto-save aktif</span>';
+    } else if (hasFSA) {
+      statusEl.innerHTML = '<button class="fh-status-btn" onclick="setupFileSave()" title="Aktifkan auto-save ke file agar data tidak hilang">⚠️ Aktifkan Auto-save</button>';
+    } else {
+      statusEl.innerHTML = '';
+    }
+  }
+
+  if (bannerEl) {
+    if (_fhReady) {
+      bannerEl.style.display = 'none';
+    } else if (isFile) {
+      bannerEl.style.display = 'flex';
+      bannerEl.className = 'filesave-banner';
+      bannerEl.innerHTML = `⚠️ <strong>Data hanya tersimpan di browser ini.</strong>
+        Buka via GitHub Pages agar bisa pakai auto-save permanen:
+        <a href="https://firhun.github.io/payroll-anak-toko/" target="_blank">firhun.github.io/payroll-anak-toko</a>
+        &nbsp;·&nbsp; Atau gunakan tombol <strong>Backup Data</strong> sebelum tutup browser.`;
+    } else if (hasFSA && !_fhReady) {
+      bannerEl.style.display = 'flex';
+      bannerEl.className = 'filesave-banner';
+      bannerEl.innerHTML = `⚠️ <strong>Auto-save belum aktif.</strong> Klik <button class="fh-status-btn" onclick="setupFileSave()" style="margin:0 4px;">⚡ Aktifkan Auto-save</button>
+        agar data tidak hilang walau browser ditutup / cache dihapus.`;
+    } else {
+      bannerEl.style.display = 'none';
+    }
+  }
+}
+
+async function setupFileSave() {
+  if (!window.showSaveFilePicker) {
+    toast('Browser tidak mendukung. Gunakan Chrome/Edge terbaru lewat GitHub Pages.');
+    return;
+  }
+  try {
+    _fh = await window.showSaveFilePicker({
+      suggestedName: 'payroll-data.json',
+      types: [{ description: 'Data Payroll JSON', accept: { 'application/json': ['.json'] } }]
+    });
+    await _idbPut(_fh);
+    _fhReady = true;
+    await writeToFile();
+    updateFHStatus();
+    toast('Auto-save aktif! Data tersimpan ke file setiap ada perubahan ✓');
+  } catch(e) {
+    if (e.name !== 'AbortError') toast('Gagal setup: ' + (e.message || 'coba lagi'));
+  }
+}
+
+async function initFileSave() {
+  if (!window.showSaveFilePicker) { updateFHStatus(); return; }
+  try {
+    _fh = await _idbGet();
+    if (!_fh) { updateFHStatus(); return; }
+    let perm = await _fh.queryPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') perm = await _fh.requestPermission({ mode: 'readwrite' });
+    _fhReady = perm === 'granted';
+    if (_fhReady && !localStorage.getItem(KEY)) {
+      // localStorage kosong → muat dari file (recovery)
+      try {
+        const txt = await (await _fh.getFile()).text();
+        const parsed = JSON.parse(txt);
+        parsed.stores?.forEach(s => {
+          if (!Array.isArray(s.roster)) s.roster = [];
+          s.employees?.forEach(e => {
+            if (e.a   === undefined) e.a   = 0;
+            if (e.ad  === undefined) e.ad  = 0;
+            if (e.paid=== undefined) e.paid= 0;
+            if (!Array.isArray(e.extras)) e.extras = [];
+          });
+        });
+        if (!Array.isArray(parsed.history)) parsed.history = [];
+        state = parsed;
+        localStorage.setItem(KEY, JSON.stringify(state));
+        toast('Data dipulihkan dari file backup ✓');
+      } catch(_) {}
+    }
+  } catch(_) { _fh = null; _fhReady = false; }
+  updateFHStatus();
+}
+
 function saveState(silent) {
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
+    writeToFile();
     if (!silent) toast('Tersimpan ✓');
   } catch(e) { toast('Gagal menyimpan'); }
 }
@@ -3634,7 +3801,8 @@ function importJson() {
 /* ============================================================
    BIND & INIT — dipanggil setelah login berhasil
    ============================================================ */
-function initMainApp() {
+async function initMainApp() {
+await initFileSave();
 $('date-start').addEventListener('change', e => { state.dateStart = e.target.value; saveState(true); if (state.view==='dashboard') renderDashboard(); else if (state.view==='calendar') renderCalendar(); });
 $('date-end').addEventListener('change', e => { state.dateEnd = e.target.value; saveState(true); if (state.view==='dashboard') renderDashboard(); else if (state.view==='calendar') renderCalendar(); });
 $('rate-late').addEventListener('input', e => { state.rateLate = Number(e.target.value)||0; saveState(true); renderAll(); });
